@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>POS机</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Admin panel developed with the Bootstrap from Twitter.">
+  <meta name="author" content="travis">
+
+  <link href="css/bootstrap.css" rel="stylesheet">
+  <link href="css/bootstrap-responsive.css" rel="stylesheet">
+
+</head>
+<body ng-app="myApp" ng-controller="myCtrl">
+  <div class="container-fluid">
+    <div class="row-fluid">
+      <div class="span8">
+        <div class="well hero-unit">
+          <h1>POS机</h1>
+        </div>
+        <div class="row-fluid">
+         <div class="page-header">
+          <h1>Goods <small>cheaper</small></h1>
+        </div>
+        <table class="table table-bordered">
+          <thead>
+           <tr>
+            <th width="20%">#</th>
+            <th width="20%">Name</th>
+            <th width="20%">Price</th>
+            <th width="20%">Sum</th>
+            <th width="20%">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="pending-user" ng-repeat="good in goods">
+           <td>{{good.No}}</td>
+           <td>{{good.Name}}</td>
+           <td>{{good.Price| currency }}</td>
+           <td>{{good.Sum-cart[$index].Number}}</td>
+           <td><input type="text" ng-model="cart[$index].Number"></td>
+         </tr>
+       </tbody>
+     </table>
+   </div>
+ </div>
+   <div class="span3">
+     <h3>账单</h3>
+
+      <div>
+        <table class="table table-bordered">
+          <thead>
+           <tr>
+            <th width="20%">#</th>
+            <th width="20%">Name</th>
+            <th width="20%">Price</th>
+            <th width="20%">Number</th>
+            <th width="20%">AllPrice</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="pending-user" ng-repeat="bill in bills">
+           <td>{{bill.No}}</td>
+           <td>{{bill.Name}}</td>
+           <td>{{bill.Price| currency }}</td>
+           <td>{{bill.Number}}</td>
+           <td>{{bill.Total| currency }}</td>
+         </tr>
+          <tr class="pending-user">
+           <td></td>
+           <td></td>
+           <td></td>
+           <td></td>
+           <td>{{billSum| currency }}</td>
+         </tr>
+       </tbody>
+     </table>
+      </div>
+  </div>
+</div>
+
+
+<script src="js/jquery.js"></script>
+<script src="js/angular.js"></script>
+<script type="text/javascript">
+  
+  var app = angular.module("myApp", []).controller("myCtrl", function($scope) {
+    $scope.bills=[];
+    $scope.billSum=0;
+    $scope.goods = [  
+      {No:'ITEM000001',Name:'土豆',Price:40,Sum:10},
+      {No:'ITEM000003',Name:'香蕉',Price:50,Sum:10},
+      {No:'ITEM000005',Name:'矿泉水',Price:60,Sum:10}
+    ];
+
+    $scope.discounts = [
+     {No:'ITEM000001',discount:0.75},
+     {No:'ITEM000005',discount:0.9}
+     ];
+
+
+    $scope.halfPrice = [
+     {No:'ITEM000001'},
+     {No:'ITEM000005'}
+     ];
+
+    $scope.cart = [
+      {No:'ITEM000001',Name:'土豆',Number:0,Price:40,Total:0},
+      {No:'ITEM000003',Name:'香蕉',Number:0,Price:50,Total:0},
+      {No:'ITEM000005',Name:'矿泉水',Number:0,Price:60,Total:0}
+    ];
+
+
+    $scope.$watch("cart", function(newValue,oldValue) {
+      for (var index = 0; index <newValue.length; index++) {
+          if(!(newValue[index].Number<=$scope.goods[index].Sum&&newValue[index].Number>=0)) {  
+            newValue[index].Number=0;            
+          }
+      }
+      $scope.cal();
+    }, true);
+
+
+    $scope.init=function() {
+      angular.forEach($scope.discounts, function(disData){
+        angular.forEach($scope.cart, function(cartData){
+            if(cartData.No==disData.No)
+            {
+              var discountPrice=disData.discount*cartData.Price;
+              cartData.Price=discountPrice;
+            }
+        });
+      });
+    }
+    $scope.init();
+
+
+    $scope.cal=function()
+    {
+      $scope.billSum=0;
+      $scope.bills=[];
+      for (var i = 0; i <$scope.cart.length; i++) {
+          var goodNo=$scope.cart[i].No;
+          $scope.cart[i].Total=$scope.cart[i].Number*$scope.cart[i].Price;
+
+          angular.forEach($scope.halfPrice, function(data){
+            if(data.No==goodNo)
+            {
+              if($scope.cart[i].Number%2==0)
+              {
+                  $scope.cart[i].Total*=0.75;
+              }
+              else
+              {
+                  $scope.cart[i].Total=0.75*$scope.cart[i].Total+0.25*$scope.cart[i].Price;
+              }
+            }
+          });
+
+          var goodBill={
+            No:$scope.cart[i].No,
+            Name:$scope.cart[i].Name,
+            Price:$scope.cart[i].Price,
+            Number:$scope.cart[i].Number,
+            Total:$scope.cart[i].Total
+          };
+
+          $scope.bills.push(goodBill);
+      }
+
+      angular.forEach($scope.bills, function(data){
+        $scope.billSum+=data.Total;
+      });
+    };
+
+  });
+
+
+</script>
+</body>
+</html>
